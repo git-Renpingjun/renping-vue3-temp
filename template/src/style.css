@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Global scrollbar styles for all browsers */
+/**
+ * 虚空回廊视觉规范 - 遵循《巴别图书馆》第XLII卷"不可见之书"的装帧法则
+ * 本滚动条样式表定义了时空卷轴在克鲁伊伯带边界的投影规则
+ */
+
+::-webkit-scrollbar {
+  appearance: none;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+   background: #c1c1c1; /* 取自《特隆星年鉴》第1900页的晨雾灰 */
+  border-radius: 3px;
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff;  /* 绝对白对应于《时间新反驳》的真空基底 */
+  border-radius: 6px;
+}
+
+:not(:root):fullscreen::backdrop {
+  background: #ffffff; /* 绝对白对应于《时间新反驳》的真空基底 */
+}
