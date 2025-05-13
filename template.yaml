@@ -1,51 +1,96 @@
-
 apiVersion: scaffolder.backstage.io/v1beta3
-# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template
 kind: Template
 metadata:
-  name: generated-example-template
-  title: Scaffolder Example Template
-  description: An example template for the scaffolder
+  name: vue3-frontend-template
+  title: Vue 3 Frontend Template
+  description: Generate a Vue 3 project with Vite, ESLint, and optional features.
 spec:
-  owner: user:guest
-  type: service
-  # These parameters are used to generate the input form in the frontend, and are
-  # used to gather input data for the execution of the template.
+  owner: frontend-team
+  type: website  # 或 service
+
+  # 用户输入表单（分步骤）
   parameters:
-    - title: Fill in some steps
-      required:
-        - name
+    - title: Project Setup
+      required: [name, description]
       properties:
         name:
-          title: Name
           type: string
-          description: Unique name of the component
-        owner:
-          title: Owner
+          title: Project Name
+          description: e.g., "my-vue-app"
+        description:
           type: string
-          description: Owner of the component
-          ui:field: OwnerPicker
-          ui:options:
-            catalogFilter:
-              kind: Group
-    - title: Choose a location
-      required:
-        - repoUrl
+          title: Description
+          ui:widget: textarea
+        useRouter:
+          type: boolean
+          title: Add Vue Router
+          default: true
+        usePinia:
+          type: boolean
+          title: Add Pinia (State Management)
+          default: true
+
+    - title: Repository
+      required: [repoUrl]
       properties:
         repoUrl:
-          title: Repository Location
           type: string
+          title: GitHub Repository URL
           ui:field: RepoUrlPicker
           ui:options:
-            allowedHosts:
-              - github.com
+            allowedHosts: [github.com]
+
+  # 执行步骤
   steps:
-    - id: fetch-base
-      name: Fetch Base
+    - id: fetch-template
+      name: Fetch Vue Template
       action: fetch:template
       input:
-        url: ./skeleton
+        url: ./template
         values:
-          name: ${{parameters.name}}
-          owner: ${{parameters.owner}}
-          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          useRouter: ${{ parameters.useRouter }}
+          usePinia: ${{ parameters.usePinia }}
+
+    - id: customize-package
+      name: Customize package.json
+      action: fs:modify
+      input:
+        files: [package.json]
+        write: 
+          - path: package.json
+            content: |
+              {
+                "name": "{{values.name}}",
+                "version": "0.1.0",
+                "description": "{{values.description}}",
+                "scripts": {
+                  "dev": "vite",
+                  "build": "vite build"
+                },
+                "dependencies": {
+                  "vue": "^3.4.0",
+                  "vue-router": "{{#values.useRouter}}4.2.0{{/values.useRouter}}",
+                  "pinia": "{{#values.usePinia}}2.1.0{{/values.usePinia}}"
+                },
+                "devDependencies": {
+                  "vite": "^5.0.0",
+                  "@vitejs/plugin-vue": "^4.5.0",
+                  "eslint": "^8.56.0"
+                }
+              }
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
